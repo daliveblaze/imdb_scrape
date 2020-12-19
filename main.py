@@ -42,7 +42,6 @@ for section in filmo_category_section:
         year = container.find('span', class_='year_column').text
         years.append(year)
     i = i +1
-print(i)
 
 # Build dataframe to store data
 movies = pd.DataFrame( {
@@ -54,9 +53,9 @@ movies = pd.DataFrame( {
 
 # Clean it
 movies['year'] = movies['year'].str.replace('\n', '')
-movies['year'] = movies['year'].str.replace(' ', '')
+movies['year'] = movies['year'].str.strip()
 
 acting = movies.loc[movies['role'] == "Actor"]
 
 # Output the CSV
-acting.to_csv("mwf_acting.csv", index=False, encoding='utf-8')
+acting.to_csv("~/mwf_acting.csv", index=False, encoding='utf-8')
