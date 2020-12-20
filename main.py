@@ -7,28 +7,18 @@ import numpy as np
 
 import email, smtplib, ssl
 
-from email import encoders
-from email.mime.base import MIMEBase
-from email.mime.multipart import MIMEMultipart
-from email.mime.text import MIMEText
+import subprocess
+from email.message import EmailMessage
 
+def sendEmail(from_addr, to_addrs, msg_subject, msg_body):
+    msg = EmailMessage()
+    msg.set_content(msg_body)
+    msg['From'] = from_addr
+    msg['To'] = to_addrs
+    msg['Subject'] = msg_subject
 
-subject = "An email with attachment from Python"
-body = "This is an email with attachment sent from Python"
-sender_email = "liveblaze@gmail.com"
-receiver_email = "dalconhai@gmail.com"
-password = "Q7ct29EEh@$YJD"
-
-
-# Create a multipart message and set headers
-message = MIMEMultipart()
-message["From"] = sender_email
-message["To"] = receiver_email
-message["Subject"] = subject
-message["Bcc"] = receiver_email  # Recommended for mass emails
-
-# Add body to email
-message.attach(MIMEText(body, "plain"))
+    sendmail_location = "/usr/sbin/sendmail"
+    subprocess.run([sendmail_location, "-t", "-oi"], input=msg.as_bytes())
 
 
 # initialize storage
@@ -40,24 +30,6 @@ filmo = []
 imdb_url = "https://www.imdb.com/"
 
 filepath = "mwf_acting.csv"
-
-# Open PDF file in binary mode
-with open(filepath, "rb") as attachment:
-    # Add file as application/octet-stream
-    # Email client can usually download this automatically as attachment
-    part = MIMEBase("application", "octet-stream")
-    part.set_payload(attachment.read())
-
-# Encode file in ASCII characters to send by email    
-encoders.encode_base64(part)
-
-# Add header as key/value pair to attachment part
-part.add_header(
-    "Content-Disposition",
-    f"attachment; filename= {filepath}",
-)
-
-
 
 # make sure we get English-translated titles from all the movies we scrape:
 headers = {"Accept-Language" : "en-US, en;q=0.5"}
@@ -108,28 +80,11 @@ acting = movies.loc[movies['role'] == "Actor"]
 acting.to_csv(filepath, index=False, encoding='utf-8')
 
 
-# Open PDF file in binary mode
-with open(filepath, "rb") as attachment:
-    # Add file as application/octet-stream
-    # Email client can usually download this automatically as attachment
-    part = MIMEBase("application", "octet-stream")
-    part.set_payload(attachment.read())
+msg_body = acting.to_string()
+print(msg_body)
 
-# Encode file in ASCII characters to send by email    
-encoders.encode_base64(part)
+msg_subject = "MWF Subject"
+from_addr = "dal@liveblaze.com"
+to_addrs = "dalconhai@gmail.com"
 
-# Add header as key/value pair to attachment part
-part.add_header(
-    "Content-Disposition",
-    f"attachment; filename= {filepath}",
-)
-
-# Add attachment to message and convert message to string
-message.attach(part)
-text = message.as_string()
-
-# Log in to server using secure context and send email
-context = ssl.create_default_context()
-with smtplib.SMTP_SSL("smtp.gmail.com", 465, context=context) as server:
-    server.login(sender_email, password)
-    server.sendmail(sender_email, receiver_email, text)
+sendEmail(from_addr, to_addrs, msg_subject, msg_body)
