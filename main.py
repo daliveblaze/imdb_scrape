@@ -3,12 +3,13 @@ from requests import get
 from bs4 import BeautifulSoup
 import pandas as pd
 import numpy as np
-
-
 import email, smtplib, ssl
 
 import subprocess
 from email.message import EmailMessage
+
+import glob
+import codecs
 
 def sendEmail(from_addr, to_addrs, msg_subject, msg_body):
     msg = EmailMessage()
@@ -75,13 +76,42 @@ movies['year'] = movies['year'].str.replace('\n', '')
 movies['year'] = movies['year'].str.strip()
 
 acting = movies.loc[movies['role'] == "Actor"]
-
+acting = acting.reset_index(drop=True)
+print(acting)
 # Output the CSV
 acting.to_csv(filepath, index=False, encoding='utf-8')
 
+length = len(acting)    #length of acting list
+acting_list = ""
+i = 0
+while i < length:
+    acting_list = acting_list + "<li><a href=\"" + acting.loc[i][1] + "\">" + acting.loc[i][0] + " (" + acting.loc[i][2] + ")</a></li>"
+    i = i+1
+print("Here is the acting list to insert: " + acting_list)
 
-msg_body = acting.to_string()
-print(msg_body)
+filename = "/var/www/markwahlbergfan.com/public_html/index.htm"
+
+with codecs.open(filename, 'r', encoding='cp1252') as f:
+    print("Reading file contents of " + filename)
+    contents = f.read()
+    # Parse file contents with bs4 and store
+    soup = BeautifulSoup(contents, "html.parser")
+    new_content = str(soup) # newly parsed contents
+    section = soup.find('div')
+    acting_list = "<div>"+acting_list+"</div>"
+    
+    new_content = new_content.replace(str(section), acting_list)
+    print(new_content)
+    print("Closing the file " + filename)
+    f.close()
+with codecs.open(filename, 'w', encoding='cp1252') as w:
+    print("Saving new file contents of " + filename)
+    w.write(new_content)
+    w.close()
+
+
+msg_body = acting_list
+#print(msg_body)
 
 msg_subject = "MWF Subject"
 from_addr = "dal@liveblaze.com"
